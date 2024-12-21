@@ -5,6 +5,8 @@ import dotenv from "dotenv";
 
 // import routes
 import authRoutes from "./routes/authRoutes";
+import userRoutes from "./routes/userRoutes";
+import globalErrorMiddleware from "./middlewares/globalErrorMiddleware";
 
 dotenv.config();
 
@@ -20,6 +22,8 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
+app.use(globalErrorMiddleware);
 
 app.listen(process.env.PORT, () => {
   console.log(`Example app listening on port ${process.env.PORT}`);
