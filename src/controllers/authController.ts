@@ -66,6 +66,8 @@ export const refreshToken = asyncHandler(async (req: Request, res: Response) => 
     return res.status(400).json({ message: "No refresh token provided" });
   }
 
+  res.clearCookie("refreshToken", { httpOnly: true, sameSite: "none", secure: process.env.NODE_ENV === "production" });
+
   try {
     // Verify refresh token
     const decoded = verifyRefreshToken(refreshToken) as { userId: string };

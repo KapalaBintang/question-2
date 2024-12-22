@@ -55,6 +55,36 @@ export const getAllProducts = asyncHandler(async (req: Request, res: Response) =
   }
 });
 
+// Get all products by categories
+export const getAllProductsByCategories = asyncHandler(async (req: Request, res: Response) => {
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 10;
+  const categoryIds = req.query.categoryIds as string; // Expected format: "id1,id2,id3"
+
+  if (!categoryIds) {
+    return res.status(400).json({ message: "Category IDs are required" });
+  }
+
+  const categoryIdsArray = categoryIds.split(","); // Convert "id1,id2,id3" to ["id1", "id2", "id3"]
+
+  try {
+    const products = await prisma.product.findMany({
+      where: {
+        categoryId: {
+          in: categoryIdsArray,
+        },
+      },
+      skip: (page - 1) * limit,
+      take: limit,
+      include: { category: true },
+    });
+
+    res.status(200).json({ message: "Products fetched successfully", products });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching products", error });
+  }
+});
+
 // Get a single product
 export const getProductById = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
   const { id } = req.params;

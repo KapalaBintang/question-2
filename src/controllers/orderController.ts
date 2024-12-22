@@ -99,3 +99,10 @@ export const updateOrderStatus = asyncHandler(async (req: AuthenticatedRequest, 
 
   res.status(200).json(updatedOrder);
 });
+
+// Get orders history
+export const ordersHistory = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+  const userId = req.user.id;
+  const orders = await prisma.order.findMany({ where: { userId }, include: { payment: { select: { method: true, status: true, paidAt: true } }, shipping: { select: { address: true, deliveredAt: true, status: true, shippedAt: true } } } });
+  res.status(200).json(orders);
+});
