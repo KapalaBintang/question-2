@@ -20,6 +20,7 @@ model User {
   password String
   role     Role     @default(CUSTOMER)
   tokens   Token[]
+  product Product[]
 }
 
 model Token {
@@ -35,4 +36,33 @@ enum Role {
   SELLER
   ADMIN
 }
+
+model Product {
+  id          String    @id @default(uuid())
+  name        String
+  description String
+  price       Float
+  condition   Condition @default(NEW)
+  stock       Int       @default(0)
+  categoryId  String
+  category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  userId      String    
+  user        User      @relation(fields: [userId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Category {
+  id          String       @id @default(uuid())
+  name        String
+  description String
+  products    Product[]
+}
+
+enum Condition {
+  NEW
+  LIGHTLY_USED
+  NEEDS_REPAIR
+}
+
 
