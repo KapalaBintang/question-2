@@ -38,7 +38,7 @@ export const getAllProducts = asyncHandler(async (req: Request, res: Response) =
 
   const findProduct = search
     ? {
-        OR: [{ name: { contains: search, mode: "insensitive" } }, { description: { contains: search, mode: "insensitive" } }],
+        OR: [{ name: { contains: search, mode: "insensitive" } }],
       }
     : {};
 
