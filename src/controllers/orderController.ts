@@ -6,7 +6,7 @@ import { AuthenticatedRequest } from "../types/AuthenticatedRequestType";
 // Checkout
 export const checkout = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
   const userId = req.user.id;
-  const { shippingAddress } = req.body;
+  const { shippingAddress, paymentMethod } = req.body;
 
   if (!shippingAddress) {
     return res.status(400).json({ message: "Shipping address is required" });
@@ -32,6 +32,12 @@ export const checkout = asyncHandler(async (req: AuthenticatedRequest, res: Resp
         userId,
         sellerId: cart.cartItems[0].product.userId,
         totalPrice,
+        payment: {
+          create: {
+            method: paymentMethod,
+            status: "SUCCESS",
+          },
+        },
         shipping: {
           create: {
             address: shippingAddress,
