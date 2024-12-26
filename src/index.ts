@@ -10,6 +10,7 @@ import productRoutes from "./routes/productRoutes";
 import categoryRoutes from "./routes/categoryRoutes";
 import cartRoutes from "./routes/cartRoutes";
 import orderRoutes from "./routes/orderRoutes";
+import reviewRoutes from "./routes/reviewRoute";
 import globalErrorMiddleware from "./middlewares/globalErrorMiddleware";
 
 dotenv.config();
@@ -31,6 +32,7 @@ app.use("/api/products", productRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/carts", cartRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api/reviews", reviewRoutes);
 app.use(globalErrorMiddleware);
 
 app.listen(process.env.PORT, () => {

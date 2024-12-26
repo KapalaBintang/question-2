@@ -6,3 +6,5 @@ const route = express.Router();
 
 route.post("/", authenticate, addProductReview);
 route.get("/:id", getProductWithReviews);
+
+export default route;

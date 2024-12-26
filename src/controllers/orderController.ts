@@ -64,6 +64,12 @@ export const checkout = asyncHandler(async (req: AuthenticatedRequest, res: Resp
       where: { cartId: cart.userId },
     });
 
+    // step 6: kurangkan stok
+    await prisma.product.updateMany({
+      where: { id: { in: cart.cartItems.map((item) => item.productId) } },
+      data: { stock: { decrement: cart.cartItems.reduce((total, item) => total + item.quantity, 0) } },
+    });
+
     return res.status(201).json({ message: "Order created successfully", order });
   } catch (error) {
     console.error(error);
