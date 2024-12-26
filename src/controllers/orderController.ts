@@ -13,67 +13,72 @@ export const checkout = asyncHandler(async (req: AuthenticatedRequest, res: Resp
   }
 
   try {
-    // Step 1: Ambil cart items berdasarkan userId
-    const cart = await prisma.cart.findUnique({
-      where: { userId },
-      include: { cartItems: { include: { product: true } } },
-    });
+    // Gunakan transaksi untuk memastikan konsistensi data
+    const result = await prisma.$transaction(async (prisma) => {
+      // Step 1: Ambil cart items berdasarkan userId
+      const cart = await prisma.cart.findUnique({
+        where: { userId },
+        include: { cartItems: { include: { product: true } } },
+      });
 
-    if (!cart || cart.cartItems.length === 0) {
-      return res.status(400).json({ message: "Cart is empty" });
-    }
+      if (!cart || cart.cartItems.length === 0) {
+        throw new Error("Cart is empty");
+      }
 
-    // Step 2: Hitung total harga dari cart items
-    const totalPrice = cart.cartItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+      // Step 2: Hitung total harga dari cart items
+      const totalPrice = cart.cartItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
 
-    // Step 3: Buat order baru
-    const order = await prisma.order.create({
-      data: {
-        userId,
-        sellerId: cart.cartItems[0].product.userId,
-        totalPrice,
-        payment: {
-          create: {
-            method: paymentMethod,
-            status: "SUCCESS",
+      // Step 3: Buat order baru
+      const order = await prisma.order.create({
+        data: {
+          userId,
+          sellerId: cart.cartItems[0].product.userId,
+          totalPrice,
+          payment: {
+            create: {
+              method: paymentMethod,
+              status: "SUCCESS",
+            },
           },
-        },
-        shipping: {
-          create: {
-            address: shippingAddress,
+          shipping: {
+            create: {
+              address: shippingAddress,
+            },
           },
+          status: "PENDING",
         },
-        status: "PENDING",
-      },
+      });
+
+      // Step 4: Tambahkan items dari cart ke dalam order
+      const orderItemsData = cart.cartItems.map((cartItem) => ({
+        orderId: order.id,
+        productId: cartItem.productId,
+        quantity: cartItem.quantity,
+        price: cartItem.product.price,
+      }));
+
+      await prisma.orderItem.createMany({
+        data: orderItemsData,
+      });
+
+      // Step 5: Kosongkan cart setelah order dibuat
+      await prisma.cartItem.deleteMany({
+        where: { cartId: cart.userId },
+      });
+
+      // Step 6: Kurangkan stok
+      await prisma.product.updateMany({
+        where: { id: { in: cart.cartItems.map((item) => item.productId) } },
+        data: { stock: { decrement: cart.cartItems.reduce((total, item) => total + item.quantity, 0) } },
+      });
+
+      return order;
     });
 
-    // Step 4: Tambahkan items dari cart ke dalam order
-    const orderItemsData = cart.cartItems.map((cartItem) => ({
-      orderId: order.id,
-      productId: cartItem.productId,
-      quantity: cartItem.quantity,
-      price: cartItem.product.price,
-    }));
-
-    await prisma.orderItem.createMany({
-      data: orderItemsData,
-    });
-
-    // Step 5: Kosongkan cart setelah order dibuat
-    await prisma.cartItem.deleteMany({
-      where: { cartId: cart.userId },
-    });
-
-    // step 6: kurangkan stok
-    await prisma.product.updateMany({
-      where: { id: { in: cart.cartItems.map((item) => item.productId) } },
-      data: { stock: { decrement: cart.cartItems.reduce((total, item) => total + item.quantity, 0) } },
-    });
-
-    return res.status(201).json({ message: "Order created successfully", order });
-  } catch (error) {
+    return res.status(201).json(result);
+  } catch (error: any) {
     console.error(error);
-    return res.status(500).json({ message: "Failed to create order", error });
+    return res.status(500).json({ message: "Failed to create order", error: error.message });
   }
 });
 

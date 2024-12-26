@@ -31,6 +31,35 @@ export const addProductReview = asyncHandler(async (req: AuthenticatedRequest, r
   res.status(201).json(review);
 });
 
+export const updateProductReview = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+  const { id } = req.params;
+  const { rating, comment } = req.body;
+
+  if (!rating || !comment) {
+    return res.status(400).json({ message: "All fields are required" });
+  }
+
+  const review = await prisma.review.update({
+    where: { id },
+    data: {
+      rating,
+      comment,
+    },
+  });
+
+  res.status(200).json(review);
+});
+
+export const deleteProductReview = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+  const { id } = req.params;
+
+  const review = await prisma.review.delete({
+    where: { id },
+  });
+
+  res.status(200).json(review);
+});
+
 export const getProductWithReviews = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
 
